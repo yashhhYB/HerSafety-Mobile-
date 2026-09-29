@@ -57,6 +57,7 @@ function RootLayoutNav() {
         <Stack.Screen name="safe-route" options={{ presentation: 'card', headerShown: true, title: 'SafeRoute' }} />
         <Stack.Screen name="paywall" options={{ presentation: 'fullScreenModal', headerShown: false }} />
         <Stack.Screen name="guardian-grid" options={{ presentation: 'card', headerShown: false }} />
+        <Stack.Screen name="radar" options={{ presentation: 'card', headerShown: false }} />
       </Stack>
     </ThemeProvider>
   );
