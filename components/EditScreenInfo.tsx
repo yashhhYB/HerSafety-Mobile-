@@ -1,3 +1,4 @@
+//screen info
 import { StyleSheet } from 'react-native';
 
 import { ExternalLink } from './ExternalLink';
