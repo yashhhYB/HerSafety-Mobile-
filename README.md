@@ -47,6 +47,57 @@ Now, someone does.
 
 ---
 
+## 🤖 AI Usage Disclosure
+As required by the **First Commit** hackathon guidelines:
+- **Code Generation & Mentoring**: I used Google's Antigravity AI assistant to help mentor me through setting up React Native/Expo, writing the boilerplate code for the UI screens, and structuring the navigation layout.
+- **Debugging**: AI was used to troubleshoot package installation issues (like React Native version mismatches).
+- **Understanding**: The AI explained how Expo Router handles navigation, how to use React Native `Animated` for the SOS button pulse effect, and how to structure the RevenueCat configuration.
+- **Original Work**: The core idea, feature planning, color scheme choices, and integration logic were driven by me. The AI acted as a pair-programmer to help execute the vision quickly during the hackathon timeframe.
+
+## 📚 What I Learned
+During this hackathon, I learned:
+- How to bootstrap a mobile app using Expo and Expo Router.
+- How to build animated UI components in React Native (the pulsing SOS button).
+- How to structure full-screen modals vs standard screens.
+- How to integrate the RevenueCat SDK for subscription paywalls.
+- How to organize a project into multiple commits to show development progress.
+
+
+## ⚙️ Setup Instructions
+
+### Prerequisites
+- Node.js >= 18
+- npm or yarn
+- Expo Go app on your mobile device (or iOS Simulator / Android Emulator)
+
+### Installation
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/yashhhYB/HerSafety-Mobile-.git
+   cd HerSafety-Mobile-
+   ```
+
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
+
+3. Run the development server:
+   ```bash
+   npx expo start
+   ```
+
+4. Choose your platform:
+   - **Mobile**: Open the Expo Go app on your phone and scan the QR code displayed in the terminal.
+   - **Web**: Press `w` in the terminal to open the app in a web browser.
+   - **Android Emulator**: Press `a` in the terminal.
+   - **iOS Simulator**: Press `i` in the terminal (Requires macOS).
+
+## 🌐 Web Version
+This Link contains the mobile application built with React Native and Expo. 
+The browser (web) version of the HerSafety application can be found at: 
+[**HerSafety Web Application**](https://hersafetyy.vercel.app/)
+
 ## 🤝 Contributing
 
 I’d love to hear ideas, feedback, or collaborate with anyone passionate about safety tech.  
