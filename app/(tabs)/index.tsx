@@ -1,215 +1,442 @@
-import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Dimensions, Platform } from 'react-native';
-import { Shield, MapPin, AlertTriangle, BookOpen, Users } from 'lucide-react-native';
-import { Link } from 'expo-router';
+import React, { useState, useEffect, useRef } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  ScrollView,
+  StatusBar,
+  Platform,
+  Animated,
+  Dimensions,
+} from 'react-native';
+import {
+  Shield,
+  Siren,
+  MapPin,
+  Users,
+  Radio,
+  BookOpen,
+  ChevronRight,
+  Zap,
+  Heart,
+} from 'lucide-react-native';
+import { Link, router } from 'expo-router';
+import * as Location from 'expo-location';
+import Colors from '@/constants/Colors';
+import { useColorScheme } from '@/components/useColorScheme';
+import { reverseGeocode } from '@/lib/tomtom';
 
 const { width } = Dimensions.get('window');
-const CARD_WIDTH = (width - 48) / 2;
 
+// ─── Types ───────────────────────────────────────────────────────────────────
+type QuickAction = {
+  id: string;
+  icon: typeof Shield;
+  label: string;
+  sub: string;
+  href: string;
+  accent: string;
+  bg: string;
+};
+
+// ─── Quick-action data ────────────────────────────────────────────────────────
+const QUICK_ACTIONS: QuickAction[] = [
+  {
+    id: 'sos',
+    icon: Siren,
+    label: 'SOS Alert',
+    sub: 'Emergency help instantly',
+    href: '/sos',
+    accent: '#E53935',
+    bg: '#FFEBEE',
+  },
+  {
+    id: 'map',
+    icon: MapPin,
+    label: 'Safe Map',
+    sub: 'Navigate with safety scores',
+    href: '/(tabs)/map',
+    accent: '#00897B',
+    bg: '#E0F2F1',
+  },
+  {
+    id: 'guardians',
+    icon: Users,
+    label: 'Guardians',
+    sub: 'Your trusted network',
+    href: '/(tabs)/guardians',
+    accent: '#1565C0',
+    bg: '#E3F2FD',
+  },
+  {
+    id: 'radar',
+    icon: Radio,
+    label: 'Threat Radar',
+    sub: 'Live safety alerts near you',
+    href: '/(tabs)/alerts',
+    accent: '#E65100',
+    bg: '#FFF3E0',
+  },
+];
+
+// ─── Safety Tips ─────────────────────────────────────────────────────────────
+const TIPS = [
+  'Share your live location with a guardian when travelling at night.',
+  'Save local police station number: tap Settings → Emergency Contacts.',
+  'Walk on well-lit streets and avoid isolated shortcuts.',
+  'Trust your instincts — if something feels wrong, act immediately.',
+];
+
+// ─── Pulse animation hook ─────────────────────────────────────────────────────
+function usePulse() {
+  const anim = useRef(new Animated.Value(1)).current;
+  useEffect(() => {
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(anim, { toValue: 1.08, duration: 900, useNativeDriver: true }),
+        Animated.timing(anim, { toValue: 1,    duration: 900, useNativeDriver: true }),
+      ])
+    ).start();
+  }, []);
+  return anim;
+}
+
+// ─── Component ────────────────────────────────────────────────────────────────
 export default function HomeScreen() {
-  const features = [
-    {
-      icon: Shield,
-      title: "SOS Help",
-      description: "Instant emergency assistance",
-      href: "/sos",
-      gradient: ['#ff6b6b', '#ff4757'],
-      color: '#ff4757'
-    },
-    {
-      icon: MapPin,
-      title: "SafeRoute",
-      description: "Navigate safely to destination",
-      href: "/safe-route",
-      gradient: ['#1dd1a1', '#10ac84'],
-      color: '#1dd1a1'
-    },
-    {
-      icon: AlertTriangle,
-      title: "Report",
-      description: "Report safety concerns",
-      href: "/report",
-      gradient: ['#feca57', '#ff9f43'],
-      color: '#ff9f43'
-    },
-    {
-      icon: BookOpen,
-      title: "Learn",
-      description: "Safety tips & resources",
-      href: "/learn",
-      gradient: ['#5f27cd', '#341f97'],
-      color: '#5f27cd'
-    },
-  ];
+  const colorScheme = useColorScheme();
+  const theme = colorScheme === 'dark' ? Colors.dark : Colors.light;
+  const pulse = usePulse();
+  const [locationStr, setLocationStr] = useState('Fetching location…');
+  const [tipIndex, setTipIndex] = useState(0);
+
+  // ── Real GPS location (reverse-geocoded via TomTom) ───────────────────────
+  useEffect(() => {
+    (async () => {
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== 'granted') {
+        setLocationStr('Location permission denied');
+        return;
+      }
+      const loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
+      // Use TomTom Reverse Geocode API
+      const label = await reverseGeocode(loc.coords.latitude, loc.coords.longitude);
+      setLocationStr(label || 'Current location');
+    })();
+  }, []);
+
+  // ── Rotate tip every 8 s ───────────────────────────────────────────────────
+  useEffect(() => {
+    const iv = setInterval(() => setTipIndex(i => (i + 1) % TIPS.length), 8000);
+    return () => clearInterval(iv);
+  }, []);
+
+  const styles = makeStyles(theme);
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      {/* Header section */}
-      <View style={styles.header}>
-        <View style={styles.logoContainer}>
-          <Shield size={36} color="#fff" />
-        </View>
-        <Text style={styles.title}>Welcome to HerSafety</Text>
-        <Text style={styles.subtitle}>You are not alone. We're here to keep you safe.</Text>
-      </View>
+    <View style={styles.root}>
+      <StatusBar
+        barStyle={colorScheme === 'dark' ? 'light-content' : 'dark-content'}
+        backgroundColor={Colors.brand.primary}
+      />
 
-      {/* Feature Grid */}
-      <View style={styles.grid}>
-        {features.map((feature, index) => (
-          <Link href={feature.href as any} asChild key={index}>
-            <TouchableOpacity style={styles.card} activeOpacity={0.8}>
-              <View style={[styles.iconBox, { backgroundColor: feature.color }]}>
-                <feature.icon size={28} color="#fff" />
-              </View>
-              <Text style={styles.cardTitle}>{feature.title}</Text>
-              <Text style={styles.cardDesc}>{feature.description}</Text>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.scroll}
+      >
+        {/* ── Hero banner ── */}
+        <View style={styles.hero}>
+          <View style={styles.heroLeft}>
+            <Text style={styles.greeting}>Good day 👋</Text>
+            <Text style={styles.heroTitle}>Stay Safe,{'\n'}Stay Confident</Text>
+            <View style={styles.locationRow}>
+              <MapPin size={13} color="rgba(255,255,255,0.8)" />
+              <Text style={styles.locationText} numberOfLines={1}>
+                {locationStr}
+              </Text>
+            </View>
+          </View>
+
+          {/* SOS shortcut button */}
+          <Link href="/sos" asChild>
+            <TouchableOpacity activeOpacity={0.85}>
+              <Animated.View style={[styles.sosPill, { transform: [{ scale: pulse }] }]}>
+                <Siren size={22} color="#E53935" />
+                <Text style={styles.sosPillText}>SOS</Text>
+              </Animated.View>
             </TouchableOpacity>
           </Link>
-        ))}
-      </View>
+        </View>
 
-      {/* Quick Actions */}
-      <View style={styles.quickActions}>
-        <Text style={styles.sectionTitle}>Quick Actions</Text>
-        
-        <Link href="/guardian" asChild>
-          <TouchableOpacity style={styles.actionButton}>
-            <Shield size={20} color="#2c3e50" style={styles.actionIcon} />
-            <Text style={styles.actionText}>Smart Guardian Mode</Text>
-          </TouchableOpacity>
-        </Link>
+        {/* ── Status strip ── */}
+        <View style={[styles.statusStrip, { backgroundColor: theme.surface }]}>
+          <View style={styles.statusItem}>
+            <View style={[styles.statusDot, { backgroundColor: Colors.brand.success }]} />
+            <Text style={[styles.statusLabel, { color: theme.textSecond }]}>Safe</Text>
+          </View>
+          <View style={styles.statusDivider} />
+          <View style={styles.statusItem}>
+            <Heart size={14} color={Colors.brand.primary} fill={Colors.brand.primary} />
+            <Text style={[styles.statusLabel, { color: theme.textSecond }]}>3 Guardians</Text>
+          </View>
+          <View style={styles.statusDivider} />
+          <View style={styles.statusItem}>
+            <Zap size={14} color={Colors.brand.warning} />
+            <Text style={[styles.statusLabel, { color: theme.textSecond }]}>1 Alert Nearby</Text>
+          </View>
+        </View>
 
-        <Link href="/radar" asChild>
-          <TouchableOpacity style={styles.actionButton}>
-            <AlertTriangle size={20} color="#2c3e50" style={styles.actionIcon} />
-            <Text style={styles.actionText}>Live Threat Radar</Text>
-          </TouchableOpacity>
-        </Link>
-        
-        <Link href="/guardian-grid" asChild>
-          <TouchableOpacity style={styles.actionButton}>
-            <Users size={20} color="#2c3e50" style={styles.actionIcon} />
-            <Text style={styles.actionText}>Guardian Grid Network</Text>
-          </TouchableOpacity>
-        </Link>
-      </View>
-    </ScrollView>
+        {/* ── Quick Actions ── */}
+        <Text style={[styles.sectionTitle, { color: theme.text }]}>Quick Actions</Text>
+        <View style={styles.actionsGrid}>
+          {QUICK_ACTIONS.map(action => (
+            <Link href={action.href as any} asChild key={action.id}>
+              <TouchableOpacity
+                style={[styles.actionCard, { backgroundColor: theme.surface }, Colors.shadow.sm]}
+                activeOpacity={0.75}
+              >
+                <View style={[styles.actionIconWrap, { backgroundColor: action.bg }]}>
+                  <action.icon size={26} color={action.accent} />
+                </View>
+                <Text style={[styles.actionLabel, { color: theme.text }]}>{action.label}</Text>
+                <Text style={[styles.actionSub, { color: theme.textSecond }]} numberOfLines={2}>
+                  {action.sub}
+                </Text>
+              </TouchableOpacity>
+            </Link>
+          ))}
+        </View>
+
+        {/* ── Safety Tip ── */}
+        <View style={[styles.tipCard, { backgroundColor: theme.surface }, Colors.shadow.sm]}>
+          <View style={styles.tipHeader}>
+            <BookOpen size={18} color={Colors.brand.secondary} />
+            <Text style={[styles.tipTitle, { color: Colors.brand.secondary }]}>Safety Tip</Text>
+            <View style={styles.tipDots}>
+              {TIPS.map((_, i) => (
+                <View
+                  key={i}
+                  style={[
+                    styles.tipDot,
+                    { backgroundColor: i === tipIndex ? Colors.brand.secondary : '#C5CAE9' },
+                  ]}
+                />
+              ))}
+            </View>
+          </View>
+          <Text style={[styles.tipBody, { color: theme.textSecond }]}>{TIPS[tipIndex]}</Text>
+        </View>
+
+        {/* ── Route safety shortcut ── */}
+        <TouchableOpacity
+          style={[styles.routeCard, { backgroundColor: Colors.brand.accent }]}
+          activeOpacity={0.85}
+          onPress={() => router.push('/(tabs)/map' as any)}
+        >
+          <View>
+            <Text style={styles.routeTitle}>Plan a Safe Route</Text>
+            <Text style={styles.routeSub}>AI-scored paths based on real data</Text>
+          </View>
+          <ChevronRight size={24} color="#fff" />
+        </TouchableOpacity>
+
+        <View style={{ height: 24 }} />
+      </ScrollView>
+    </View>
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#f8f9fa',
-  },
-  content: {
-    padding: 16,
-    paddingTop: Platform.OS === 'ios' ? 60 : 40,
-    paddingBottom: 40,
-  },
-  header: {
-    alignItems: 'center',
-    marginBottom: 32,
-  },
-  logoContainer: {
-    width: 72,
-    height: 72,
-    borderRadius: 36,
-    backgroundColor: '#3498db',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 16,
-    shadowColor: '#3498db',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.4,
-    shadowRadius: 12,
-    elevation: 10,
-  },
-  title: {
-    fontSize: 26,
-    fontWeight: '800',
-    color: '#2c3e50',
-    marginBottom: 8,
-  },
-  subtitle: {
-    fontSize: 15,
-    color: '#7f8c8d',
-    textAlign: 'center',
-  },
-  grid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
-    marginBottom: 32,
-  },
-  card: {
-    width: CARD_WIDTH,
-    backgroundColor: '#fff',
-    borderRadius: 20,
-    padding: 16,
-    marginBottom: 16,
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.05,
-    shadowRadius: 10,
-    elevation: 3,
-  },
-  iconBox: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  cardTitle: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#2c3e50',
-    marginBottom: 4,
-    textAlign: 'center',
-  },
-  cardDesc: {
-    fontSize: 12,
-    color: '#95a5a6',
-    textAlign: 'center',
-    lineHeight: 16,
-  },
-  quickActions: {
-    backgroundColor: '#fff',
-    borderRadius: 24,
-    padding: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.04,
-    shadowRadius: 16,
-    elevation: 4,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#2c3e50',
-    marginBottom: 16,
-    textAlign: 'center',
-  },
-  actionButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderWidth: 1.5,
-    borderColor: '#e8ecef',
-    borderRadius: 12,
-    paddingVertical: 14,
-    paddingHorizontal: 16,
-    marginBottom: 12,
-    backgroundColor: '#fff',
-  },
-  actionIcon: {
-    marginRight: 12,
-  },
-  actionText: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: '#2c3e50',
-  }
-});
+// ─── Styles (theme-aware) ─────────────────────────────────────────────────────
+function makeStyles(theme: typeof Colors.light) {
+  return StyleSheet.create({
+    root: {
+      flex: 1,
+      backgroundColor: theme.bg,
+    },
+    scroll: {
+      paddingBottom: 16,
+    },
+
+    // Hero
+    hero: {
+      backgroundColor: Colors.brand.primary,
+      paddingTop: Platform.OS === 'ios' ? 60 : 40,
+      paddingBottom: 28,
+      paddingHorizontal: 20,
+      flexDirection: 'row',
+      alignItems: 'flex-start',
+      justifyContent: 'space-between',
+    },
+    heroLeft: {
+      flex: 1,
+      marginRight: 12,
+    },
+    greeting: {
+      fontSize: 14,
+      color: 'rgba(255,255,255,0.75)',
+      marginBottom: 4,
+      fontWeight: '500',
+    },
+    heroTitle: {
+      fontSize: 26,
+      fontWeight: '800',
+      color: '#fff',
+      lineHeight: 32,
+      marginBottom: 10,
+    },
+    locationRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 4,
+    },
+    locationText: {
+      fontSize: 13,
+      color: 'rgba(255,255,255,0.8)',
+      flex: 1,
+    },
+
+    // SOS pill
+    sosPill: {
+      backgroundColor: '#fff',
+      borderRadius: 40,
+      paddingHorizontal: 16,
+      paddingVertical: 10,
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 6,
+      marginTop: Platform.OS === 'ios' ? 14 : 0,
+      ...Colors.shadow.md,
+    },
+    sosPillText: {
+      color: '#E53935',
+      fontSize: 15,
+      fontWeight: '800',
+      letterSpacing: 1,
+    },
+
+    // Status strip
+    statusStrip: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-around',
+      marginHorizontal: 16,
+      marginTop: -12,
+      borderRadius: Colors.radius.md,
+      paddingVertical: 14,
+      paddingHorizontal: 12,
+      ...Colors.shadow.md,
+    },
+    statusItem: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 6,
+    },
+    statusDot: {
+      width: 10,
+      height: 10,
+      borderRadius: 5,
+    },
+    statusLabel: {
+      fontSize: 13,
+      fontWeight: '600',
+    },
+    statusDivider: {
+      width: 1,
+      height: 18,
+      backgroundColor: '#E0E0E0',
+    },
+
+    // Section title
+    sectionTitle: {
+      fontSize: 18,
+      fontWeight: '700',
+      marginTop: 28,
+      marginBottom: 14,
+      marginHorizontal: 16,
+    },
+
+    // Actions grid
+    actionsGrid: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      gap: 12,
+      paddingHorizontal: 16,
+    },
+    actionCard: {
+      width: (width - 44) / 2,
+      borderRadius: Colors.radius.md,
+      padding: 16,
+    },
+    actionIconWrap: {
+      width: 52,
+      height: 52,
+      borderRadius: 14,
+      justifyContent: 'center',
+      alignItems: 'center',
+      marginBottom: 12,
+    },
+    actionLabel: {
+      fontSize: 15,
+      fontWeight: '700',
+      marginBottom: 4,
+    },
+    actionSub: {
+      fontSize: 12,
+      lineHeight: 16,
+    },
+
+    // Safety tip
+    tipCard: {
+      marginHorizontal: 16,
+      marginTop: 20,
+      borderRadius: Colors.radius.md,
+      padding: 18,
+    },
+    tipHeader: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 8,
+      marginBottom: 10,
+    },
+    tipTitle: {
+      fontSize: 14,
+      fontWeight: '700',
+      flex: 1,
+    },
+    tipDots: {
+      flexDirection: 'row',
+      gap: 4,
+    },
+    tipDot: {
+      width: 6,
+      height: 6,
+      borderRadius: 3,
+    },
+    tipBody: {
+      fontSize: 14,
+      lineHeight: 20,
+    },
+
+    // Route card
+    routeCard: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      marginHorizontal: 16,
+      marginTop: 16,
+      borderRadius: Colors.radius.md,
+      padding: 20,
+      ...Colors.shadow.md,
+    },
+    routeTitle: {
+      fontSize: 16,
+      fontWeight: '800',
+      color: '#fff',
+      marginBottom: 4,
+    },
+    routeSub: {
+      fontSize: 13,
+      color: 'rgba(255,255,255,0.8)',
+    },
+  });
+}

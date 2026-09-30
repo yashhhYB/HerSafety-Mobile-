@@ -1,46 +1,107 @@
-import { Link, Tabs } from 'expo-router';
-import { Platform, Pressable } from 'react-native';
-import { Home, Settings, Info } from 'lucide-react-native';
+import { Tabs } from 'expo-router';
+import { Platform, View } from 'react-native';
+import {
+  Shield,
+  Map,
+  Bell,
+  Users,
+  UserCircle,
+} from 'lucide-react-native';
 
 import Colors from '@/constants/Colors';
 import { useColorScheme } from '@/components/useColorScheme';
-import { useClientOnlyValue } from '@/components/useClientOnlyValue';
+
+function TabIcon({
+  icon: Icon,
+  color,
+  focused,
+}: {
+  icon: typeof Shield;
+  color: string;
+  focused: boolean;
+}) {
+  return (
+    <View
+      style={{
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingTop: 4,
+      }}
+    >
+      <Icon size={24} color={color} strokeWidth={focused ? 2.5 : 1.8} />
+    </View>
+  );
+}
 
 export default function TabLayout() {
   const colorScheme = useColorScheme();
+  const theme = colorScheme === 'dark' ? Colors.dark : Colors.light;
 
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: '#ff4757',
-        headerShown: useClientOnlyValue(false, true),
+        headerShown: false,
+        tabBarActiveTintColor: theme.tabActive,
+        tabBarInactiveTintColor: theme.tabInactive,
+        tabBarLabelStyle: {
+          fontSize: 11,
+          fontWeight: '600',
+          marginBottom: Platform.OS === 'ios' ? 0 : 4,
+        },
         tabBarStyle: {
-          backgroundColor: colorScheme === 'dark' ? '#1e272e' : '#ffffff',
-          borderTopColor: colorScheme === 'dark' ? '#2f3542' : '#f1f2f6',
-        }
-      }}>
+          backgroundColor: theme.tabBar,
+          borderTopColor: theme.tabBarBorder,
+          borderTopWidth: 1,
+          height: Platform.OS === 'ios' ? 84 : 64,
+          paddingTop: 6,
+          paddingBottom: Platform.OS === 'ios' ? 28 : 8,
+          ...Colors.shadow.sm,
+        },
+      }}
+    >
       <Tabs.Screen
         name="index"
         options={{
           title: 'Home',
-          headerShown: false,
-          tabBarIcon: ({ color }) => <Home color={color} size={24} />,
-          headerRight: () => (
-            <Link href="/modal" asChild>
-              <Pressable style={{ marginRight: 15 }}>
-                {({ pressed }) => (
-                  <Info color={colorScheme === 'dark' ? '#fff' : '#000'} size={24} style={{ opacity: pressed ? 0.5 : 1 }} />
-                )}
-              </Pressable>
-            </Link>
+          tabBarIcon: ({ color, focused }) => (
+            <TabIcon icon={Shield} color={color} focused={focused} />
           ),
         }}
       />
       <Tabs.Screen
-        name="two"
+        name="map"
         options={{
-          title: 'Settings',
-          tabBarIcon: ({ color }) => <Settings color={color} size={24} />,
+          title: 'Map',
+          tabBarIcon: ({ color, focused }) => (
+            <TabIcon icon={Map} color={color} focused={focused} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="alerts"
+        options={{
+          title: 'Alerts',
+          tabBarIcon: ({ color, focused }) => (
+            <TabIcon icon={Bell} color={color} focused={focused} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="guardians"
+        options={{
+          title: 'Guardians',
+          tabBarIcon: ({ color, focused }) => (
+            <TabIcon icon={Users} color={color} focused={focused} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="profile"
+        options={{
+          title: 'Profile',
+          tabBarIcon: ({ color, focused }) => (
+            <TabIcon icon={UserCircle} color={color} focused={focused} />
+          ),
         }}
       />
     </Tabs>
