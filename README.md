@@ -45,7 +45,16 @@ This project was built for:
    npx expo start
    ```
 
-4. Open the Expo Go app on your phone and scan the QR code displayed in the terminal.
+4. Choose your platform:
+   - **Mobile**: Open the Expo Go app on your phone and scan the QR code displayed in the terminal.
+   - **Web**: Press `w` in the terminal to open the app in a web browser.
+   - **Android Emulator**: Press `a` in the terminal.
+   - **iOS Simulator**: Press `i` in the terminal (Requires macOS).
+
+## 🌐 Web Version
+This repository contains the mobile application built with React Native and Expo. 
+The browser (web) version of the HerSafety application can be found at: 
+[**HerSafety Web Application**](https://github.com/yashhhYB/HerSafetyy)
 
 ## 🤖 AI Usage Disclosure
 As required by the **First Commit** hackathon guidelines:
