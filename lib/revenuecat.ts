@@ -1,3 +1,4 @@
+//revenuecat details 
 import Purchases, { LOG_LEVEL } from 'react-native-purchases';
 import { Platform } from 'react-native';
 
